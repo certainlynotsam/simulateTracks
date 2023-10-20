@@ -1,6 +1,15 @@
 % simulateTracks.m
 % written by Sam Daly 
 
+% At the moment this code can simulate pure Brownian and confined diffusion
+% and also a mixture of both. Confined diffusion has a few parameters that
+% can be tweaked in the function "generateTracks", specifically the
+% confinement volume (on the order of 100s of nm) and the kT (or Boltzmann
+% energy) of molecules. A mixture of both Brownian and confined diffusion
+% can also be simulated in the same dataset by using 'mixture' for
+% motion_type and setting the proportion of Brownian motion accordingly
+% (again see "generateTracks" function). 
+
 clear all; close all; clc; 
 
 addpath('lib')
@@ -12,8 +21,8 @@ motion_type = ['brownian']; % 'brownian' / 'confined' / 'mixed'
 space_units = 'µm'; % dimension units
 time_units = 's'; % exposure time units
 
-N_particles = 1; % number of particles
-N_time_steps = 4000; % track lengths
+N_particles = 200; % number of particles
+N_time_steps = 20; % track lengths
 N_dim = 3; % number of dimensions
 
 % Area size, just used to disperse particles in 2D (no impact on analysis.)
@@ -162,4 +171,21 @@ LOGstd = std(ma.loglogfit.alpha(good_enough_fit));
 fprintf('Estimation of alpha from linear fit of %.0f %% of curve:\n', loglog_fit*100)
 fprintf('a = %.3g ± %.3g (mean ± std, N = %d)\n', LOGmean, LOGstd, sum(good_enough_fit));
 
+%% Save location
 
+path = 'C:\Users\sgd46\OneDrive - University of Cambridge\Desktop\20231020_simulating_confinement\';
+newDir = [datestr(now, 'yyyymmdd'), '_', motion_type, '_motion_', num2str(N_particles), '_particles_', num2str(N_time_steps), '_time_steps_in_', num2str(N_dim), 'D_D_of_', num2str(Diff), '_dT_', num2str(dT)];
+
+mkdir([path newDir]);
+
+saveas(figure(1), [path newDir '\trajectories.fig']);
+saveas(figure(2), [path newDir '\MSD.fig']);
+
+fileID = fopen([path newDir '\info.txt'],'w');
+fprintf(fileID,'Estimation of the diffusion coefficient from linear fit of the 25%% MSD curves:\n');
+fprintf(fileID,'D = %.3g ± %.3g (mean ± std, N = %d)\n', Dmean, Dstd, sum(good_enough_fit));
+fprintf(fileID,'Estimation of alpha from linear fit of %.0f %% of curve:\n', loglog_fit*100)
+fprintf(fileID,'a = %.3g ± %.3g (mean ± std, N = %d)\n', LOGmean, LOGstd, sum(good_enough_fit));
+fclose(fileID);
+
+save([path newDir '\tracks.mat'], 'tracks');
